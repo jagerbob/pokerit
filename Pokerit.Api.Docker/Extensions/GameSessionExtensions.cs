@@ -6,12 +6,9 @@ namespace Pokerit.Api.Docker.Extensions
     {
         public static GameSession Clone(this GameSession session) => new()
         {
-            GameState = new()
-            {
-                GameId = session.GameState.GameId,
-                Phase = session.GameState.Phase,
-                Players = session.GameState.Players
-            },
+            Id = session.Id,
+            Phase = session.Phase,
+            Players = session.Players,
             CreationTime = session.CreationTime,
         };
     }

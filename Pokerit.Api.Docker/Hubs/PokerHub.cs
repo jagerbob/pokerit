@@ -7,25 +7,16 @@ namespace Pokerit.Api.Docker.Hubs
 {
     public class PokerHub : Hub
     {
-        private readonly ConcurrentDictionary<string, GameSession> _sessions;
-
-        public PokerHub()
-        {
-            _sessions = new ConcurrentDictionary<string, GameSession>();
-        }
+        private static readonly ConcurrentDictionary<string, GameSession> _sessions = new ConcurrentDictionary<string, GameSession>();
 
         public async Task Join(string username, string hubId)
         {
             var retrievedSession = GetSession(hubId);
-            var newSession = retrievedSession.Clone();
-            newSession.GameState.Players.Add(new()
-            {
-                Id = Context.ConnectionId,
-                Username = username,
-            });
-            _sessions.TryUpdate(retrievedSession.GameState.GameId, newSession, retrievedSession);
-            _sessions.TryGetValue(retrievedSession.GameState.GameId, out GameSession? session);
-            Console.WriteLine(session);
+            await Groups.AddToGroupAsync(Context.ConnectionId, retrievedSession.Id);
+            AddPlayer(retrievedSession, username);
+            _sessions.TryGetValue(retrievedSession.Id, out GameSession? session);
+            NotifySessionUpdate(session.Id, session);
+
         }
 
         public async Task SendMessage(string user, string message)
@@ -54,16 +45,30 @@ namespace Pokerit.Api.Docker.Hubs
         private GameSession CreateNewSession() {
             GameSession session = new()
             {
-                GameState = new()
-                {
-                    GameId = Guid.NewGuid().ToString(),
-                    Phase = GamePhase.IDLE,
-                    Players = new List<Player>(),
-                },
+                Id = Guid.NewGuid().ToString(),
+                Phase = GamePhase.IDLE,
+                Players = new List<Player>(),
                 CreationTime = DateTime.Now
             };
-            _sessions.TryAdd(session.GameState.GameId, session);
+            _sessions.TryAdd(session.Id, session);
             return session;
+        }
+
+        private void AddPlayer(GameSession session, string username)
+        {
+            var newSession = session.Clone();
+            newSession.Players.Add(new()
+            {
+                Id = Context.ConnectionId,
+                Username = username,
+            });
+            _sessions.TryUpdate(session.Id, newSession, session);
+        }
+
+        private async void NotifySessionUpdate(string sessionId, GameSession updatedSession)
+        {
+            await Clients.Group(sessionId).SendAsync("SessionUpdated", updatedSession);
+
         }
     }
 }
