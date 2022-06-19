@@ -7,16 +7,3 @@ services:
       context: ./src/pokerit
     ports:
     - 9898:9898
-    links:
-    - postgres
-    depends_on:
-    - postgres
-  postgres:
-    image: postgres
-    ports:
-    - 5432:5432
-    environment:
-      POSTGRES_DB: phoenix
-      POSTGRES_USER: pokerit_user
-      POSTGRES_PASSWORD: incrediblyHardPassword
-    restart: always
