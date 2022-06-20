@@ -18,11 +18,27 @@ namespace Pokerit.Api.Docker.Hubs
             NotifySessionUpdate(session.Id, session);
         }
 
+        public async Task Leave(string hubId)
+        {
+            var retrievedSession = GetSession(hubId);
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, retrievedSession.Id);
+            RemovePlayer(retrievedSession, Context.ConnectionId);
+            _sessions.TryGetValue(retrievedSession.Id, out GameSession? session);
+            NotifySessionUpdate(session.Id, session);
+        }
+
         public async Task SetVote(string hubId, int vote)
         {
             var retrievedSession = GetSession(hubId);
             SetVote(retrievedSession, Context.ConnectionId, vote);
-            SetPhase(retrievedSession, GamePhases.VOTING);
+            _sessions.TryGetValue(retrievedSession.Id, out GameSession? session);
+            NotifySessionUpdate(session.Id, session);
+        }
+
+        public async Task SetUsername(string hubId, string username)
+        {
+            var retrievedSession = GetSession(hubId);
+            SetUsername(retrievedSession, Context.ConnectionId, username);
             _sessions.TryGetValue(retrievedSession.Id, out GameSession? session);
             NotifySessionUpdate(session.Id, session);
         }
@@ -84,10 +100,24 @@ namespace Pokerit.Api.Docker.Hubs
             _sessions.TryUpdate(session.Id, newSession, session);
         }
 
+        private void RemovePlayer(GameSession session, string connectionId)
+        {
+            var newSession = session.Clone();
+            var player = newSession.Players.RemoveAll((p) => p.Id == connectionId);
+            _sessions.TryUpdate(session.Id, newSession, session);
+        }
+
         private void SetPhase(GameSession session, string phase)
         {
             var newSession = session.Clone();
             newSession.Phase = phase;
+            if(phase == GamePhases.VOTING)
+            {
+                newSession.Players.ForEach((p) => {
+                    p.IsReady = false;
+                    p.Vote = -1;
+                });
+            }
             _sessions.TryUpdate(session.Id, newSession, session);
         }
 
@@ -97,6 +127,14 @@ namespace Pokerit.Api.Docker.Hubs
             var player = newSession.Players.First((p) => p.Id == connectionId);
             player.Vote = vote;
             player.IsReady = true;
+            _sessions.TryUpdate(session.Id, newSession, session);
+        }
+
+        private void SetUsername(GameSession session, string connectionId, string username)
+        {
+            var newSession = session.Clone();
+            var player = newSession.Players.First((p) => p.Id == connectionId);
+            player.Username = username;
             _sessions.TryUpdate(session.Id, newSession, session);
         }
 
