@@ -16,12 +16,31 @@ namespace Pokerit.Api.Docker.Hubs
             AddPlayer(retrievedSession, username);
             _sessions.TryGetValue(retrievedSession.Id, out GameSession? session);
             NotifySessionUpdate(session.Id, session);
-
         }
 
-        public async Task SendMessage(string user, string message)
+        public async Task SetVote(string hubId, int vote)
         {
-            await Clients.All.SendAsync("ReceiveMessage", user, message);
+            var retrievedSession = GetSession(hubId);
+            SetVote(retrievedSession, Context.ConnectionId, vote);
+            SetPhase(retrievedSession, GamePhases.VOTING);
+            _sessions.TryGetValue(retrievedSession.Id, out GameSession? session);
+            NotifySessionUpdate(session.Id, session);
+        }
+
+        public async Task StartVote(string hubId)
+        {
+            var retrievedSession = GetSession(hubId);
+            SetPhase(retrievedSession, GamePhases.VOTING);
+            _sessions.TryGetValue(retrievedSession.Id, out GameSession? session);
+            NotifySessionUpdate(session.Id, session);
+        }
+
+        public async Task StopVote(string hubId)
+        {
+            var retrievedSession = GetSession(hubId);
+            SetPhase(retrievedSession, GamePhases.SHOWING);
+            _sessions.TryGetValue(retrievedSession.Id, out GameSession? session);
+            NotifySessionUpdate(session.Id, session);
         }
 
         private GameSession GetSession(string hubId)
@@ -46,7 +65,7 @@ namespace Pokerit.Api.Docker.Hubs
             GameSession session = new()
             {
                 Id = Guid.NewGuid().ToString(),
-                Phase = GamePhase.IDLE,
+                Phase = GamePhases.IDLE,
                 Players = new List<Player>(),
                 CreationTime = DateTime.Now
             };
@@ -65,10 +84,25 @@ namespace Pokerit.Api.Docker.Hubs
             _sessions.TryUpdate(session.Id, newSession, session);
         }
 
+        private void SetPhase(GameSession session, string phase)
+        {
+            var newSession = session.Clone();
+            newSession.Phase = phase;
+            _sessions.TryUpdate(session.Id, newSession, session);
+        }
+
+        private void SetVote(GameSession session, string connectionId, int vote)
+        {
+            var newSession = session.Clone();
+            var player = newSession.Players.First((p) => p.Id == connectionId);
+            player.Vote = vote;
+            player.IsReady = true;
+            _sessions.TryUpdate(session.Id, newSession, session);
+        }
+
         private async void NotifySessionUpdate(string sessionId, GameSession updatedSession)
         {
             await Clients.Group(sessionId).SendAsync("SessionUpdated", updatedSession);
-
         }
     }
 }
