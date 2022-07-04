@@ -4,6 +4,6 @@ services:
   pokerit:
     image: ${DOCKER_REGISTRY-}pokerit
     build:
-      context: ./src/pokerit
+      context: ./Pokerit.Api.Docker
     ports:
-    - 9898:9898
+    - 9898:443
