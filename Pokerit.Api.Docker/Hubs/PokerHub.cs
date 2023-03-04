@@ -2,6 +2,7 @@
 using Pokerit.Api.Docker.Model;
 using Pokerit.Api.Docker.Extensions;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 
 namespace Pokerit.Api.Docker.Hubs
 {
@@ -9,13 +10,11 @@ namespace Pokerit.Api.Docker.Hubs
     {
         private static readonly ConcurrentDictionary<string, GameSession> _sessions = new ConcurrentDictionary<string, GameSession>();
 
-        public async Task Join(string username, string hubId)
+        public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            var retrievedSession = GetSession(hubId);
-            await Groups.AddToGroupAsync(Context.ConnectionId, retrievedSession.Id);
-            AddPlayer(retrievedSession, username);
-            _sessions.TryGetValue(retrievedSession.Id, out GameSession? session);
-            NotifySessionUpdate(session.Id, session);
+            var connectionId = Context.ConnectionId;
+            var userSessions = _sessions.Values.Where(s => s.Players.Any(p => p.Id == connectionId)).ToList();
+            userSessions.ForEach(s => RemovePlayer(s, connectionId));
         }
 
         public async Task Leave(string hubId)
@@ -23,6 +22,28 @@ namespace Pokerit.Api.Docker.Hubs
             var retrievedSession = GetSession(hubId);
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, retrievedSession.Id);
             RemovePlayer(retrievedSession, Context.ConnectionId);
+        }
+
+        private void RemovePlayer(GameSession session, string connectionId)
+        {
+            if(session.Players.Count < 2)
+            {
+                _sessions.TryRemove(session.Id, out _);
+            } else
+            {
+                var newSession = session.Clone();
+                newSession.Players.RemoveAll((p) => p.Id == connectionId);
+                _sessions.TryUpdate(session.Id, newSession, session);
+                _sessions.TryGetValue(session.Id, out GameSession? updatedSession);
+                NotifySessionUpdate(session.Id, updatedSession);
+            }
+        }
+
+        public async Task Join(string username, string hubId)
+        {
+            var retrievedSession = GetSession(hubId);
+            await Groups.AddToGroupAsync(Context.ConnectionId, retrievedSession.Id);
+            AddPlayer(retrievedSession, username);
             _sessions.TryGetValue(retrievedSession.Id, out GameSession? session);
             NotifySessionUpdate(session.Id, session);
         }
@@ -97,13 +118,6 @@ namespace Pokerit.Api.Docker.Hubs
                 Id = Context.ConnectionId,
                 Username = username,
             });
-            _sessions.TryUpdate(session.Id, newSession, session);
-        }
-
-        private void RemovePlayer(GameSession session, string connectionId)
-        {
-            var newSession = session.Clone();
-            var player = newSession.Players.RemoveAll((p) => p.Id == connectionId);
             _sessions.TryUpdate(session.Id, newSession, session);
         }
 

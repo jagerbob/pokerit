@@ -32,3 +32,4 @@ packages/
 *.orig
 .idea/*
 /doc/**/swagger.json
+*.tar

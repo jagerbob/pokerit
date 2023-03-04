@@ -12,7 +12,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy("PokeritPolicy",
     builder =>
     {
-        builder.WithOrigins("https://pokerit.noa.broker")
+        builder
+        .WithOrigins("https://pokerit.noa.broker", "http://noa.broker:5000", "http://localhost:3000")
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials();
