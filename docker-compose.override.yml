@@ -1,15 +1,10 @@
 version: '3.4'
 
 services:
-  pokerit:
+  pokerit.api.docker:
     environment:
-      - ASPNETCORE_URLS=https://+:443;http://+:80
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_Kestrel__Certificates__Default__Password=Doritos01
-      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/pokerit.pfx
-    ports:
-      - "443"
+      - ASPNETCORE_URLS=https://+:443;
     volumes:
       - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
       - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
-      - /certs:/https:ro

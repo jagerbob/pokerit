@@ -12,7 +12,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("PokeritPolicy",
     builder =>
     {
-        builder.WithOrigins("https://pokerit.chatonmort.com")
+        builder.WithOrigins("https://pokerit.noa.broker")
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials();

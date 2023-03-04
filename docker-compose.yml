@@ -1,9 +1,10 @@
 version: '3.4'
 
 services:
-  pokerit:
-    image: ${DOCKER_REGISTRY-}pokerit
+  pokerit.api.docker:
+    image: ${DOCKER_REGISTRY-}pokeritapidocker
     build:
-      context: ./Pokerit.Api.Docker
+      context: .
+      dockerfile: Pokerit.Api.Docker/Dockerfile
     ports:
-    - 9898:443
+      - "10000:443"

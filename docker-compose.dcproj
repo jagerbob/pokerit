@@ -3,10 +3,10 @@
   <PropertyGroup Label="Globals">
     <ProjectVersion>2.1</ProjectVersion>
     <DockerTargetOS>Linux</DockerTargetOS>
-    <ProjectGuid>be86ccc0-b574-40f4-840b-9cc5ad4e5bd8</ProjectGuid>
+    <ProjectGuid>fa8b8172-d184-4adc-b405-30c4c5522fcb</ProjectGuid>
     <DockerLaunchAction>LaunchBrowser</DockerLaunchAction>
     <DockerServiceUrl>{Scheme}://localhost:{ServicePort}/swagger</DockerServiceUrl>
-    <DockerServiceName>pokerit</DockerServiceName>
+    <DockerServiceName>pokerit.api.docker</DockerServiceName>
   </PropertyGroup>
   <ItemGroup>
     <None Include="docker-compose.override.yml">
